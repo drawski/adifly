@@ -5,6 +5,7 @@ export interface AdifFile {
   header: AdifHeader
   records: AdifRecord[]
   metaErrors: AdifError[]
+  appFieldTypes?: Map<string, AppFieldType>
 }
 
 /**
@@ -17,6 +18,15 @@ export interface AdifHeader {
   userDefs?: UserDefinedFieldSpec[]
   rawHeaderText?: string
   metaErrors: AdifError[]
+}
+
+/**
+ * Represents an APP_* field type specification
+ */
+export interface AppFieldType {
+  name: string
+  length: number
+  dataTypeIndicator?: string
 }
 
 /**
@@ -34,7 +44,9 @@ export interface UserDefinedFieldSpec {
  */
 export interface AdifRecord {
   fields: Map<string, FieldInstance>
+  duplicateFields?: Map<string, FieldInstance[]>
   metaErrors: AdifError[]
+  appFieldTypes?: Map<string, AppFieldType>
 }
 
 /**
@@ -75,3 +87,5 @@ export type AdifErrorType =
   | 'NonWhitespaceOutsideField'
   | 'DataTypeChanged'
   | 'UserDefUndeclared'
+  | 'InvalidUserDefSyntax'
+  | 'EmptyRecord'

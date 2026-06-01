@@ -155,18 +155,33 @@ export function handleHeaderField(
 /**
  * Adds a field to a record, checking for duplicates
  */
-export function addFieldToRecord(record: AdifRecord, field: FieldInstance): void {
-  const existingField = record.fields.get(field.normalizedName)
+export function addFieldToRecord(record: AdifRecord, field: FieldInstance, strict: boolean = false): void {
+  const existingField = record.fields.get(field.normalizedName);
 
   if (existingField) {
     // Duplicate field name - add error to both fields
     const error = createAdifError('DuplicateFieldName', `Duplicate field name: ${field.name}`, {
       fieldName: field.name,
-    })
+    });
 
-    existingField.metaErrors.push(error)
-    field.metaErrors.push(error)
+    existingField.metaErrors.push(error);
+    field.metaErrors.push(error);
+
+    if (strict) {
+      // In strict mode, store duplicates as a list
+      if (!record.duplicateFields) {
+        record.duplicateFields = new Map();
+      }
+
+      const duplicates = record.duplicateFields.get(field.normalizedName) || [];
+      duplicates.push(field);
+      record.duplicateFields.set(field.normalizedName, duplicates);
+    } else {
+      // Keep both fields in the record
+      record.fields.set(field.normalizedName, field);
+    }
+  } else {
+    // First occurrence of this field
+    record.fields.set(field.normalizedName, field);
   }
-
-  record.fields.set(field.normalizedName, field)
 }

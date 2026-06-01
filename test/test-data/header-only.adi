@@ -1,0 +1,5 @@
+ADIF export with header only, no QSOs
+<ADIF_VER:5>3.1.5
+<PROGRAMID:6>adifly
+<PROGRAMVERSION:5>0.1.0
+<EOH>
