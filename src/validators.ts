@@ -1,4 +1,4 @@
-import { AdifRecord, FieldInstance, UserDefinedFieldSpec } from './models'
+import { AdifFile, AdifRecord, FieldInstance, UserDefinedFieldSpec } from './models'
 import { createAdifError } from './errors'
 
 /**
@@ -11,7 +11,7 @@ export function validateUserDefinedFields(
   if (!userDefs) return
 
   for (const [normalizedName, field] of record.fields) {
-    const userDef = userDefs.find((def) => def.name.toUpperCase() === normalizedName)
+    const userDef = userDefs.find((def) => def.name === normalizedName)
     if (userDef) {
       // Check enum values if specified
       if (userDef.enumValues && userDef.enumValues.length > 0) {
@@ -60,6 +60,18 @@ export function validateUserDefinedFields(
 }
 
 /**
+ * Validates USERDEF fields across all records
+ */
+export function validateUserDefinedFieldsAcrossRecords(
+  records: AdifRecord[],
+  userDefs: UserDefinedFieldSpec[],
+): void {
+  for (const record of records) {
+    validateUserDefinedFields(record, userDefs)
+  }
+}
+
+/**
  * Validates that application-defined fields maintain consistent data types
  */
 export function validateAppDefinedFields(
@@ -83,5 +95,132 @@ export function validateAppDefinedFields(
         appFieldTypes.set(normalizedName, field.dataTypeIndicator || 'MultilineString')
       }
     }
+  }
+}
+
+/**
+ * Validates APP_* field types for consistency across all records
+ */
+export function validateAppDefinedFieldsAcrossRecords(
+  records: AdifRecord[],
+  result: AdifFile,
+): void {
+  if (!result.appFieldTypes || result.appFieldTypes.size === 0) return
+
+  // Create a map to track the first occurrence of each APP_* field (by field name only)
+  const firstFieldTypes = new Map<string, { name: string, length: number, dataTypeIndicator?: string }>()
+
+  // First pass: find the first occurrence of each APP_* field
+  for (const record of records) {
+    if (record.appFieldTypes) {
+      for (const [fieldTypeKey, fieldType] of record.appFieldTypes.entries()) {
+        // Use just the field name as the key for tracking first occurrence
+        const fieldNameKey = fieldType.name
+        if (!firstFieldTypes.has(fieldNameKey)) {
+          firstFieldTypes.set(fieldNameKey, fieldType)
+        }
+      }
+    }
+  }
+
+  // Second pass: check if subsequent records have different field types
+  for (const record of records) {
+    if (record.appFieldTypes) {
+      for (const [fieldTypeKey, fieldType] of record.appFieldTypes.entries()) {
+        const fieldNameKey = fieldType.name
+        const firstFieldType = firstFieldTypes.get(fieldNameKey)
+        if (firstFieldType &&
+            (firstFieldType.dataTypeIndicator !== fieldType.dataTypeIndicator ||
+             firstFieldType.length !== fieldType.length)) {
+          // Add error to the field, not the record
+          const field = record.fields.get(fieldNameKey)
+          if (field) {
+            // Add DataTypeChanged error first, then remove any LengthUnderflow error
+            // This ensures DataTypeChanged is the primary error for APP_* field type changes
+            field.metaErrors = field.metaErrors.filter(error => error.type !== 'LengthUnderflow')
+            field.metaErrors.unshift(
+              createAdifError('DataTypeChanged', `APP_* field type changed: ${fieldNameKey}`, {
+                fieldName: fieldNameKey,
+                severity: 'error'
+              })
+            )
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Validates ADIF syntax including nested tags and non-whitespace outside fields
+ */
+export function validateAdifSyntax(
+  adifContent: string,
+  result: AdifFile,
+  state: string,
+  isHeaderOnlyFile: boolean,
+): void {
+  if (!adifContent.includes('<') || !adifContent.includes('>')) return
+
+  const tagRegex = /<([^>]+)>/g
+  let match
+  let lastTagEnd = 0
+  const reportedNonWhitespacePositions = new Set<string>()
+
+  while ((match = tagRegex.exec(adifContent)) !== null) {
+    const tagContent = match[1]
+    const tagStart = match.index
+    const tagEnd = tagStart + match[0].length
+
+    // Check for nested tags
+    if (tagContent.includes('<') && tagContent.includes('>')) {
+      result.metaErrors.push(
+        createAdifError('InvalidTagSyntax', 'Nested tags detected', {
+          position: { start: tagStart, end: tagEnd },
+        }),
+      )
+    }
+
+    // Check for non-whitespace outside fields
+    if (lastTagEnd < tagStart) {
+      const outsideContent = adifContent.substring(lastTagEnd, tagStart)
+      if (outsideContent.trim().length > 0) {
+        // Only report non-whitespace outside fields after EOH or between records
+        if (state === 'PARSING_RECORDS' && !isHeaderOnlyFile) {
+          const positionKey = `${lastTagEnd}-${tagStart}`
+
+          // Skip if the previous tag was a field-like tag (contains :) and not a special tag
+          // This means the current content is likely a field value, not outside content
+          const previousTagContent = adifContent.substring(
+            adifContent.lastIndexOf('<', lastTagEnd - 1) + 1,
+            lastTagEnd - 1
+          )
+          const isPreviousTagFieldLike = previousTagContent.includes(':') &&
+                                        !['EOH', 'EOR'].includes(previousTagContent.toUpperCase())
+
+          // Skip if this is content before the first tag and we have actual header fields
+          // This handles cases like "ADIF exported from adifly tests<ADIF_VER:5>3.1.5"
+          const isBeforeFirstTag = lastTagEnd === 0
+          const hasActualHeaderFields = result.header?.version || result.header?.programId || result.header?.programVersion
+
+          if (!isPreviousTagFieldLike && !(isBeforeFirstTag && hasActualHeaderFields)) {
+            if (!reportedNonWhitespacePositions.has(positionKey)) {
+              reportedNonWhitespacePositions.add(positionKey)
+              result.metaErrors.push(
+                createAdifError(
+                  'NonWhitespaceOutsideField',
+                  'Non-whitespace outside fields detected',
+                  {
+                    position: { start: lastTagEnd, end: tagStart },
+                  },
+                ),
+              )
+            }
+          }
+        }
+      }
+    }
+
+    lastTagEnd = tagEnd
   }
 }
