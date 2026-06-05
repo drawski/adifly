@@ -35,4 +35,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Memory-efficient processing for large ADIF files.
 - Clear separation of concerns between parsing and validation layers.
 
+## [0.1.1] - 2026-06-05
+
+### Added
+- **TypeScript Type Exports**: New `src/types.ts` file that re-exports all important types for easy access.
+- **Utility Functions**: Added new utility functions to `src/utils.ts`:
+  - `adifToJson()` - Convert parsed ADIF data to JSON format.
+  - `normalizeFieldName()` - Normalize field names to consistent case (uppercase).
+  - `extractFieldValues()` - Extract specific field values from all records.
+- **Validation Schema Export**: New `adifValidationSchema` object in `src/validators.ts` that exposes:
+  - Header and record validation rules.
+  - Field type definitions and patterns.
+  - All validation functions for external use.
+- **Debug Mode**: Added `debug` option to `parseAdif()` function for detailed parsing information.
+
+### Changed
+- Updated `src/index.ts` to export new utility functions and types.
+- Enhanced documentation in `README.md` with examples for all new features.
+- Updated `src/parser.ts` to accept debug option in parseAdif function.
+
+### Technical Improvements
+- Improved developer experience with better TypeScript support.
+- Added comprehensive tests for all new features.
+- Maintained 100% backward compatibility while adding new functionality.
+
 ## [Unreleased]

@@ -30,7 +30,7 @@ interface ParserState {
   isHeaderOnlyFile: boolean;
 }
 
-export function parseAdif(adifContent: string, options: { strict?: boolean } = {}): AdifFile {
+export function parseAdif(adifContent: string, options: { strict?: boolean; debug?: boolean } = {}): AdifFile {
   const result: AdifFile = {
     header: {
       metaErrors: [],
@@ -139,9 +139,15 @@ export function parseAdif(adifContent: string, options: { strict?: boolean } = {
   }
 
   // Debug output
-  // console.log('DEBUG: currentRecord exists?', !!currentRecord);
-  // console.log('DEBUG: foundEorTags?', foundEorTags);
-  // console.log('DEBUG: currentRecord fields size?', currentRecord?.fields.size);
+  if (options.debug) {
+    console.log('DEBUG: Parser state:');
+    console.log(`  - currentRecord exists: ${!!currentRecord}`);
+    console.log(`  - foundEorTags: ${foundEorTags}`);
+    console.log(`  - currentRecord fields size: ${currentRecord?.fields.size || 0}`);
+    console.log(`  - records parsed: ${result.records.length}`);
+    console.log(`  - meta errors: ${result.metaErrors.length}`);
+    console.log(`  - header errors: ${result.header.metaErrors.length}`);
+  }
 
   if (currentRecord) {
     // Only push the current record if it has fields, unless we have consecutive EORs

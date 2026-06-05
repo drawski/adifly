@@ -224,3 +224,44 @@ export function validateAdifSyntax(
     lastTagEnd = tagEnd
   }
 }
+
+/**
+ * Validation schema for ADIF files
+ * This schema defines the expected structure and validation rules for ADIF files
+ */
+export const adifValidationSchema = {
+  // Header validation rules
+  header: {
+    requiredFields: ['ADIF_VER'] as const,
+    optionalFields: ['PROGRAMID', 'PROGRAMVERSION'] as const,
+    userDefinedFields: ['USERDEF'] as const,
+  },
+
+  // Record validation rules
+  record: {
+    commonFields: ['CALL', 'QSO_DATE', 'TIME_ON', 'BAND', 'MODE'] as const,
+    // Add more field validation rules as needed
+  },
+
+  // Field type validation
+  fieldTypes: {
+    // Define expected data types for common fields
+    ADIF_VER: { type: 'string', pattern: /^\d+\.\d+\.\d+$/ },
+    PROGRAMID: { type: 'string' },
+    PROGRAMVERSION: { type: 'string' },
+    CALL: { type: 'string' },
+    QSO_DATE: { type: 'string', pattern: /^\d{8}$/ },
+    TIME_ON: { type: 'string', pattern: /^\d{4,6}$/ },
+    BAND: { type: 'string' },
+    MODE: { type: 'string' },
+  },
+
+  // Validation functions for external use
+  validate: {
+    userDefinedFields: validateUserDefinedFields,
+    userDefinedFieldsAcrossRecords: validateUserDefinedFieldsAcrossRecords,
+    appDefinedFields: validateAppDefinedFields,
+    appDefinedFieldsAcrossRecords: validateAppDefinedFieldsAcrossRecords,
+    adifSyntax: validateAdifSyntax,
+  },
+}

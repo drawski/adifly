@@ -57,6 +57,70 @@ if (metaErrors.length > 0) {
 const result = parseAdif(adifContent, { strict: true })
 ```
 
+### Debug Mode
+
+```javascript
+// Enable debug mode for detailed parsing information
+const result = parseAdif(adifContent, { debug: true })
+// This will output debug information to the console
+```
+
+### TypeScript Types
+
+The library exports all TypeScript types for easy use in your applications:
+
+```javascript
+import { AdifFile, AdifRecord, AdifHeader, FieldInstance, AdifError } from '@sp9lee/adifly'
+
+// Use types for better TypeScript support
+function processAdifFile(file: AdifFile): void {
+  // Type-safe access to ADIF data
+  console.log(`ADIF Version: ${file.header.version}`)
+  file.records.forEach((record: AdifRecord) => {
+    const callField = record.fields.get('CALL')
+    if (callField) {
+      console.log(`Call: ${callField.value}`)
+    }
+  })
+}
+```
+
+### Utility Functions
+
+The library provides utility functions for common operations:
+
+```javascript
+import { parseAdif, adifToJson, normalizeFieldName, extractFieldValues } from '@sp9lee/adifly'
+
+const result = parseAdif(adifContent)
+
+// Convert to JSON
+const jsonOutput = adifToJson(result)
+console.log(jsonOutput)
+
+// Normalize field names
+const normalized = normalizeFieldName('call') // Returns 'CALL'
+
+// Extract field values from all records
+const calls = extractFieldValues(result, 'CALL')
+console.log('All calls:', calls)
+```
+
+### Validation Schema
+
+Access the validation schema and functions for custom validation:
+
+```javascript
+import { adifValidationSchema } from '@sp9lee/adifly'
+
+// Use the validation schema for custom validation
+console.log('Required header fields:', adifValidationSchema.header.requiredFields)
+
+// Use validation functions directly
+const { validate } = adifValidationSchema
+validate.userDefinedFields(record, userDefs)
+```
+
 ## API Reference
 
 ### `parseAdif(adifContent: string, options?: ParseOptions): AdifFile`

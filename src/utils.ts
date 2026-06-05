@@ -572,3 +572,41 @@ export function addFieldToRecord(record: AdifRecord, field: FieldInstance, stric
     record.fields.set(field.normalizedName, field);
   }
 }
+
+/**
+ * Converts parsed ADIF data to JSON format
+ * @param adifFile - The parsed ADIF file to convert
+ * @returns JSON representation of the ADIF data
+ */
+export function adifToJson(adifFile: AdifFile): string {
+  return JSON.stringify(adifFile, null, 2)
+}
+
+/**
+ * Normalizes field names to consistent case (uppercase)
+ * @param fieldName - The field name to normalize
+ * @returns Normalized field name in uppercase
+ */
+export function normalizeFieldName(fieldName: string): string {
+  return fieldName.toUpperCase()
+}
+
+/**
+ * Extracts specific field values from all records
+ * @param adifFile - The parsed ADIF file
+ * @param fieldName - The field name to extract (case-insensitive)
+ * @returns Array of values for the specified field from all records
+ */
+export function extractFieldValues(adifFile: AdifFile, fieldName: string): string[] {
+  const normalizedFieldName = normalizeFieldName(fieldName)
+  const values: string[] = []
+
+  for (const record of adifFile.records) {
+    const field = record.fields.get(normalizedFieldName)
+    if (field) {
+      values.push(field.value)
+    }
+  }
+
+  return values
+}
