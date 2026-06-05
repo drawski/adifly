@@ -1,6 +1,6 @@
 {
   "name": "@sp9lee/adifly",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A lightweight, robust ADIF (.adi) parser library for JavaScript/TypeScript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -24,6 +24,7 @@
   "license": "MIT",
   "devDependencies": {
     "@types/jest": "^29.0.0",
+    "@types/node": "^25.9.1",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.0.0",

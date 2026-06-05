@@ -59,4 +59,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added comprehensive tests for all new features.
 - Maintained 100% backward compatibility while adding new functionality.
 
+## [0.1.2] - 2026-06-05
+
+### Added
+- **Custom Header Field Support**: Added support for parsing custom header fields (e.g., X_* fields) that are not part of the standard ADIF specification.
+- **Enhanced Error Handling**: Improved error handling for header parsing with custom fields.
+- **Updated Dependencies**: Added `@types/node` as a dev dependency for better TypeScript support.
+
+### Changed
+- Updated `AdifHeader` interface to include `customFields` property for storing non-standard header fields.
+- Enhanced `handleHeaderField` function to properly handle and store custom header fields in a Map structure.
+- Updated test cases to verify custom header field parsing functionality.
+
+### Technical Improvements
+- Better handling of non-standard ADIF header fields while maintaining backward compatibility.
+- Improved type safety with additional TypeScript type definitions.
+- Maintained 100% test coverage for all new functionality.
+
 ## [Unreleased]
