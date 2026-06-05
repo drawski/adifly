@@ -523,7 +523,18 @@ export function handleHeaderField(
       break
     // USERDEF fields are handled separately
     default:
-      // Ignore unknown header fields
+      // Store custom header fields (like X_* fields)
+      if (!header.customFields) {
+        header.customFields = new Map()
+      }
+      header.customFields.set(normalizedName, {
+        name: fieldName,
+        normalizedName,
+        value,
+        length: value.length,
+        dataTypeIndicator,
+        metaErrors: []
+      })
       break
   }
 }

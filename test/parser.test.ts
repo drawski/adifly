@@ -201,14 +201,21 @@ describe('ADIF Parser', () => {
     expect(result.records[1].fields.get('APP_MYFIELD')?.metaErrors[0].type).toBe('DataTypeChanged')
   })
 
-  test('parses real sample file', () => {
+  test('parses sample file', () => {
     const adif = readTestFile('simple.adi')
     const result = parseAdif(adif)
 
     console.log(result.metaErrors)
 
+    expect(result.header.metaErrors.length).toBe(0);
     expect(result.metaErrors.length).toBe(0)
     expect(result.records.length).toBeGreaterThan(0)
+
+    // Check that header custom fields are present
+    expect(result.header.customFields).toBeDefined();
+    expect(result.header.customFields?.get('X_OP_NOTES')).toBeDefined();
+    expect(result.header.customFields?.get('X_OP_NOTES')?.value).toBe('TESTING\n');
+    expect(result.header.customFields?.get('X_OP_NOTES')?.length).toBe(8);
 
     // Check that required fields are present
     for (const record of result.records) {

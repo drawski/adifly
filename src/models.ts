@@ -16,6 +16,7 @@ export interface AdifHeader {
   programId?: string // PROGRAMID
   programVersion?: string // PROGRAMVERSION
   userDefs?: UserDefinedFieldSpec[]
+  customFields?: Map<string, FieldInstance> // Custom header fields like X_*
   rawHeaderText?: string
   metaErrors: AdifError[]
 }
