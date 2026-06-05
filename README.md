@@ -158,6 +158,22 @@ First stable release with:
 - Full test coverage
 - TypeScript support
 - Documentation
+- **Refactored Architecture**: Improved modular design with separate header and record parsing functions for better maintainability
+
+## Architecture
+
+The ADIF parser has been refactored with a clean, modular architecture:
+
+- **`parseAdif()`**: Main coordinator function that orchestrates the parsing process
+- **`parseHeaderSection()`**: Dedicated function for parsing ADIF header content and EOH detection
+- **`parseRecordsSection()`**: Dedicated function for parsing record data and EOR handling
+- **Validation Layer**: Modular validation functions in `src/validators.ts` for comprehensive error checking
+
+This architecture provides:
+- Clear separation of concerns
+- Easier debugging and maintenance
+- Better testability
+- Improved code readability
 
 ## License
 
