@@ -21,9 +21,14 @@ import {
   validateAdifSyntax
 } from './validators'
 
-type ParserState =
-  | 'PARSING_HEADER'
-  | 'PARSING_RECORDS'
+interface ParserState {
+  mode: 'PARSING_HEADER' | 'PARSING_RECORDS';
+  currentRecord: AdifRecord | null;
+  position: number;
+  foundEorTags: boolean;
+  hasConsecutiveEors: boolean;
+  isHeaderOnlyFile: boolean;
+}
 
 export function parseAdif(adifContent: string, options: { strict?: boolean } = {}): AdifFile {
   const result: AdifFile = {
@@ -43,21 +48,28 @@ export function parseAdif(adifContent: string, options: { strict?: boolean } = {
 
   let position = 0;
   let currentRecord: AdifRecord | null = null;
-let state: ParserState = 'PARSING_HEADER';
+  let state: ParserState = {
+    mode: 'PARSING_HEADER',
+    currentRecord: null,
+    position: 0,
+    foundEorTags: false,
+    hasConsecutiveEors: false,
+    isHeaderOnlyFile: false,
+  };
   const fieldValueRanges: Array<{start: number, end: number}> = [];
   let foundEorTags = false;
   let hasConsecutiveEors = false;
   let isHeaderOnlyFile = false;
 
   while (position < adifContent.length) {
-    if (state === 'PARSING_HEADER') {
+    if (state.mode === 'PARSING_HEADER') {
       // Check if we're at a potential tag start
       if (adifContent[position] === '<') {
         // Handle EOH detection
         const eohResult = handleEohTag(adifContent, position, result);
         if (eohResult.isEohFound) {
           position = eohResult.newPosition;
-          state = 'PARSING_RECORDS';
+          state.mode = 'PARSING_RECORDS';
           continue;
         }
       }
@@ -67,7 +79,7 @@ let state: ParserState = 'PARSING_HEADER';
       const eorCheck = adifContent.substr(position, 5).toUpperCase();
       if (eorCheck === '<EOR>') {
         // console.log('DEBUG: Found EOR in header parsing mode');
-        state = 'PARSING_RECORDS';
+        state.mode = 'PARSING_RECORDS';
         // Handle the EOR immediately
         foundEorTags = true;
         if (currentRecord) {
@@ -115,7 +127,7 @@ let state: ParserState = 'PARSING_HEADER';
 
       // Check if parseField found an EOH tag
       if (fieldResult.isEoh) {
-        state = 'PARSING_RECORDS';
+        state.mode = 'PARSING_RECORDS';
         continue;
       }
 
@@ -129,7 +141,7 @@ let state: ParserState = 'PARSING_HEADER';
       if (fieldResult.field && !['ADIF_VER', 'PROGRAMID', 'PROGRAMVERSION'].includes(fieldResult.field.name.toUpperCase())) {
         // This looks like a record field, but we're still in header parsing mode
         // This means there's no EOH tag, so we should switch to record parsing
-        state = 'PARSING_RECORDS';
+        state.mode = 'PARSING_RECORDS';
 
         // Create the first record and add this field to it
         if (!currentRecord) {
@@ -142,7 +154,7 @@ let state: ParserState = 'PARSING_HEADER';
         validateAndAddField(currentRecord, fieldResult.field, options, result);
       }
     }
-   else if (state === 'PARSING_RECORDS') {
+   else if (state.mode === 'PARSING_RECORDS') {
     // Check for EOR tag first
     if (adifContent.substr(position, 5).toUpperCase() === '<EOR>') {
       // Handle EOR tag

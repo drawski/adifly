@@ -157,7 +157,7 @@ export function validateAppDefinedFieldsAcrossRecords(
 export function validateAdifSyntax(
   adifContent: string,
   result: AdifFile,
-  state: string,
+  state: { mode: 'PARSING_HEADER' | 'PARSING_RECORDS' },
   isHeaderOnlyFile: boolean,
 ): void {
   if (!adifContent.includes('<') || !adifContent.includes('>')) return
@@ -186,7 +186,7 @@ export function validateAdifSyntax(
       const outsideContent = adifContent.substring(lastTagEnd, tagStart)
       if (outsideContent.trim().length > 0) {
         // Only report non-whitespace outside fields after EOH or between records
-        if (state === 'PARSING_RECORDS' && !isHeaderOnlyFile) {
+        if (state.mode === 'PARSING_RECORDS' && !isHeaderOnlyFile) {
           const positionKey = `${lastTagEnd}-${tagStart}`
 
           // Skip if the previous tag was a field-like tag (contains :) and not a special tag
