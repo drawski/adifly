@@ -76,67 +76,76 @@ This document outlines a step-by-step plan to refactor the ADIF parser with the 
 - All edge cases still handled correctly
 - No change in error reporting
 
-## Phase 3: Core Parser Modularization
+## Phase 3: Core Parser Modularization (Hybrid Approach)
 
-### 3.1 Create Dedicated Parser Classes
-**New files**: `src/header-parser.ts`, `src/record-parser.ts`
-
-**Action Plan**:
-1. Create `HeaderParser` class with responsibility for:
-   - Parsing header fields
-   - Handling EOH tags
-   - Managing header state
-   - Validating header structure
-
-2. Create `RecordParser` class with responsibility for:
-   - Parsing record fields
-   - Handling EOR tags
-   - Managing record state
-   - Validating record structure
-
-3. Modify `parseAdif` to coordinate between these parsers
-
-**Implementation Details**:
-```typescript
-// Example structure for HeaderParser
-class HeaderParser {
-  private state: HeaderParserState;
-  private result: AdifHeader;
-
-  constructor() {
-    this.state = { mode: 'parsing', foundEoh: false };
-    this.result = createEmptyHeader();
-  }
-
-  parse(content: string): AdifHeader {
-    // Implementation moves here from parseAdif
-  }
-
-  private handleField(field: FieldInstance) {
-    // Field handling logic
-  }
-
-  private handleEoh() {
-    // EOH handling logic
-  }
-}
-```
-
-### 3.2 Implement Parser Coordination
+### 3.1 Extract Header and Record Parsing Functions
 **Files to modify**: `src/parser.ts`
 
 **Action Plan**:
-1. Modify `parseAdif` to act as coordinator between:
-   - HeaderParser
-   - RecordParser
-   - Validation utilities
+1. Extract header parsing logic to a dedicated `parseHeaderSection()` function:
+   - Handle all header field parsing
+   - Manage EOH tag detection and processing
+   - Maintain header state
+   - Validate header structure
+
+2. Extract record parsing logic to a dedicated `parseRecordsSection()` function:
+   - Handle all record field parsing
+   - Manage EOR tag detection and processing
+   - Maintain record state
+   - Validate record structure
+
+3. Update `parseAdif` to coordinate between these functions:
+   - First call `parseHeaderSection()`
+   - Then call `parseRecordsSection()`
+   - Maintain all existing state transitions
+
+**Implementation Details**:
+```typescript
+/**
+ * Parses the header section of an ADIF file
+ */
+function parseHeaderSection(
+  content: string,
+  result: AdifFile,
+  state: ParserState
+): { newPosition: number, updatedState: ParserState } {
+  // Implementation moves here from parseAdif
+  // Handles all header parsing logic
+  // Returns updated position and state
+}
+
+/**
+ * Parses the records section of an ADIF file
+ */
+function parseRecordsSection(
+  content: string,
+  result: AdifFile,
+  state: ParserState,
+  position: number
+): { newPosition: number, updatedState: ParserState } {
+  // Implementation moves here from parseAdif
+  // Handles all record parsing logic
+  // Returns updated position and state
+}
+```
+
+### 3.2 Update Parser Coordination
+**Files to modify**: `src/parser.ts`
+
+**Action Plan**:
+1. Modify `parseAdif` to act as coordinator:
+   - Initialize result and state
+   - Call `parseHeaderSection()`
+   - Call `parseRecordsSection()`
+   - Perform final validation
 2. Maintain exact same function signature and return type
-3. Ensure all state transitions happen through well-defined interfaces
+3. Ensure all state transitions happen through well-defined function interfaces
 
 **Verification**:
 - All parser behavior remains identical
 - State transitions are explicit and testable
 - No change in error handling
+- All existing tests pass without modification
 
 ## Phase 4: State Machine Implementation
 
